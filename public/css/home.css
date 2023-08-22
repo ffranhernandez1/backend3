@@ -1,0 +1,17 @@
+.title-home{
+    display: inline;
+}
+
+.container-products{
+    display: flex;
+    margin-top: 40px;
+}
+
+#cerrarSesion{
+    background-color: #ff0;
+    color: #fff;
+    border-radius: 4px;
+    text-decoration: none;
+    margin: 120px;
+    padding: 15px;
+}
