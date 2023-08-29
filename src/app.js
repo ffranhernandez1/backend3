@@ -14,6 +14,8 @@ import MessagesModel from "./dao/models/messages.js"
 import sessionRouter from "./Routes/session.router.js"
 import session from "express-session"
 import MongoStore from "connect-mongo"
+import passport from "passport"
+import intializePassport from "./config/passport.config.js"
 
 dotenv.config()
 
@@ -39,13 +41,16 @@ app.use(session({
     saveUninitialized: false
 }))
 
+intializePassport()
+app.use(passport.initialize())
+app.use(passport.session()) 
+
 app.use(express.json())
 app.use(express.urlencoded({extended : true}))
 
 app.engine('handlebars', engine());
 app.set('view engine', 'handlebars');
 app.set('views', path.join(__dirname, "./views"));
-
 
 app.use(express.static("../public"))
 
@@ -62,7 +67,6 @@ app.use("/carrito",Carritorouter)
 app.use("/views",auth,Viewrouter)
 app.use("/chat",auth,Chatrouter)
 app.use("/",sessionRouter)
-
 
 const server = app.listen(PORT,()=>{
     console.log("Escuchando desde el puerto " + PORT)
