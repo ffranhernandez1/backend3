@@ -23,13 +23,13 @@ const app = express()
 
 const PORT = process.env.PORT || 8080
 
-const MONGO_URL = process.env.URL_MONGOOSE
+const MONGO_URL = process.env.MONGO_URL
 
 const connection = mongoose.connect(MONGO_URL)
 
 app.use(session({
     store : MongoStore.create({
-        mongoUrl: process.env.URL_MONGOOSE,
+        mongoUrl: process.env.MONGO_URL,
         mongoOptions: {
             useNewUrlParser: true,
             useUnifiedTopology: true,
