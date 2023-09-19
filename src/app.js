@@ -1,35 +1,43 @@
+//IMPORTACIONES
 import express from "express"
 import { engine } from "express-handlebars"
 import Viewrouter from "./Routes/view.router.js"
 import { Server } from "socket.io"
-import ProductsModel from "./dao/models/products.js"
+import ProductsModel from "./dao/mongo/models/products.js"
 import path from "path"
-import { __dirname } from "./utils.js"
-import * as dotenv from "dotenv"
+import { __dirname, authToken } from "./utils.js"
 import mongoose from "mongoose"
 import Productosrouter from "./Routes/productos.router.js"
 import Carritorouter from "./Routes/carrito.router.js"
 import Chatrouter from "./Routes/chat.router.js"
-import MessagesModel from "./dao/models/messages.js"
+import MessagesModel from "./dao/mongo/models/messages.js"
 import sessionRouter from "./Routes/session.router.js"
 import session from "express-session"
 import MongoStore from "connect-mongo"
 import passport from "passport"
 import intializePassport from "./config/passport.config.js"
-
-dotenv.config()
-
+import cookieParser from "cookie-parser"
+import {configuration} from "./config.js"
+//Configuración del dotenv
+configuration()
+//Inicializar express
 const app = express()
+//Guardar el puerto
+const PORT = process.env.PORT
+//Guardar la direccion de la base de Mongo
+const MONGO_URL = process.env.URL_MONGOOSE
+//Conectar con mongo
+mongoose.connect(MONGO_URL)
+//Modo de trabajo
+const ENVIRONMENT = process.env.ENVIRONMENT
 
-const PORT = process.env.PORT || 8080
+//Cookie
+app.use(cookieParser("C0D3RS3CR3T"))
 
-const MONGO_URL = process.env.MONGO_URL
-
-const connection = mongoose.connect(MONGO_URL)
-
+//Sesión con mongo
 app.use(session({
     store : MongoStore.create({
-        mongoUrl: process.env.MONGO_URL,
+        mongoUrl: process.env.URL_MONGOOSE,
         mongoOptions: {
             useNewUrlParser: true,
             useUnifiedTopology: true,
@@ -41,40 +49,42 @@ app.use(session({
     saveUninitialized: false
 }))
 
+//Passport
 intializePassport()
 app.use(passport.initialize())
 app.use(passport.session()) 
 
+//Configuración del express
 app.use(express.json())
 app.use(express.urlencoded({extended : true}))
 
+//Configuración del handlebars
 app.engine('handlebars', engine());
 app.set('view engine', 'handlebars');
 app.set('views', path.join(__dirname, "./views"));
 
+
+//Uso de la carpeta public para ver el contenido / comunicación cliente servidor
 app.use(express.static("../public"))
 
-function auth(req,res,next){
-    if(req.session.rol){
-        return next()
-    }else{
-        res.send("Error")
-    }
-}
-
+//Rutas
 app.use("/productos",Productosrouter)
 app.use("/carrito",Carritorouter)
-app.use("/views",auth,Viewrouter)
-app.use("/chat",auth,Chatrouter)
+app.use("/views",authToken,Viewrouter)
+app.use("/chat",authToken,Chatrouter)
 app.use("/",sessionRouter)
 
+
+
+//Inicializar el servidor con socket
 const server = app.listen(PORT,()=>{
-    console.log("Escuchando desde el puerto " + PORT)
+    console.log("Escuchando desde el puerto " + PORT + " en modo " + ENVIRONMENT)
 })
 
 server.on("error",(err)=>{
     console.log(err)
 })
+
 
 const ioServer = new Server(server)
 
@@ -86,15 +96,7 @@ ioServer.on("connection", async (socket) => {
     })
 
     socket.on("new-product", async (data) => {
-      let title = data.title
-      let description = data.description
-      let code = data.code
-      let price = +data.price
-      let stock = +data.stock
-      let category = data.category
-      let thumbnail = data.thumbnail
-      console.log(title,description,code,price,stock,category,thumbnail)
-      console.log("Producto agregado correctamente")
+      console.log("Producto agregado correctamente",data)
     });
 
     socket.on("delete-product",async(data)=>{ 
